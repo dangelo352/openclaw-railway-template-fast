@@ -105,18 +105,7 @@ function configPath() {
 
 function isConfigured() {
   try {
-    for (const candidate of resolveConfigCandidates()) {
-      if (!fs.existsSync(candidate)) continue;
-      try {
-        const raw = fs.readFileSync(candidate, "utf8");
-        const cfg = parseJson5(raw);
-        const mode = cfg?.gateway?.mode;
-        if (typeof mode === "string" && mode.trim()) return true;
-      } catch {
-        // Ignore malformed/stale config files and treat as not configured.
-      }
-    }
-    return false;
+    return resolveConfigCandidates().some((candidate) => fs.existsSync(candidate));
   } catch {
     return false;
   }
