@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1.7
+#
+# Fast path: build wrapper on top of the official prebuilt OpenClaw image.
+# This avoids compiling OpenClaw from source during provisioning.
+#
+FROM ghcr.io/openclaw/openclaw:latest
+
+ENV NODE_ENV=production
+
+# Official image runs OpenClaw from /app/openclaw.mjs.
+ENV OPENCLAW_ENTRY=/app/openclaw.mjs
+
+WORKDIR /wrapper
+
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --omit=dev \
+  && npm cache clean --force
+
+COPY src ./src
+
+# Persist user-installed tools by default by targeting the Railway volume.
+ENV NPM_CONFIG_PREFIX=/data/npm
+ENV NPM_CONFIG_CACHE=/data/npm-cache
+ENV PNPM_HOME=/data/pnpm
+ENV PNPM_STORE_DIR=/data/pnpm-store
+ENV PATH="/data/npm/bin:/data/pnpm:${PATH}"
+
+EXPOSE 8080
+
+CMD ["node", "src/server.js"]
