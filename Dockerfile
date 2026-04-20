@@ -66,6 +66,10 @@ ENV PATH="/data/npm/bin:/data/pnpm:${PATH}"
 
 WORKDIR /app
 
+# Ensure /data is writable even when no Railway volume is mounted.
+RUN mkdir -p /data/.openclaw /data/workspace /data/npm /data/npm-cache /data/pnpm /data/pnpm-store \
+  && chmod -R 0777 /data
+
 # Wrapper deps
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev \
