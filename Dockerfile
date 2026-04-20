@@ -3,8 +3,8 @@
 FROM node:22-bookworm AS openclaw-build
 
 # Dependencies needed for openclaw build
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,id=apt-lists,target=/var/lib/apt,sharing=locked \
   apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     git \
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Bun (openclaw build uses it)
-RUN --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,id=root-cache,target=/root/.cache \
   curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
 
@@ -37,15 +37,15 @@ RUN set -eux; \
     sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*"workspace:[^"]+"/"openclaw": "*"/g' "$f"; \
   done
 
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-  --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+  --mount=type=cache,id=root-cache,target=/root/.cache \
   pnpm install --no-frozen-lockfile
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-  --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+  --mount=type=cache,id=root-cache,target=/root/.cache \
   pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-  --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+  --mount=type=cache,id=root-cache,target=/root/.cache \
   pnpm ui:install && pnpm ui:build
 
 
@@ -53,8 +53,8 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 FROM node:22-bookworm
 ENV NODE_ENV=production
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,id=apt-lists,target=/var/lib/apt,sharing=locked \
   apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -79,7 +79,7 @@ WORKDIR /app
 
 # Wrapper deps
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
   npm ci --omit=dev \
   && npm cache clean --force
 

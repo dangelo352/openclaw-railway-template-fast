@@ -13,7 +13,7 @@ ENV OPENCLAW_ENTRY=/app/openclaw.mjs
 WORKDIR /wrapper
 
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
   npm ci --omit=dev \
   && npm cache clean --force
 
